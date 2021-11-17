@@ -1,0 +1,6 @@
+/.idea/
+/LexerLab.iml
+/compilerlab.iml
+*/target/
+target/
+/src/main/resources/parse_table.xlsx
