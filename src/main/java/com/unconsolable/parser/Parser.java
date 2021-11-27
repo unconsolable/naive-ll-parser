@@ -21,12 +21,17 @@ public class Parser {
         Map<String, Integer> nonTerm2Idx = t1.getNonterm2idx();
         Map<String, Integer> term2Idx = t1.getTerm2idx();
         List<Map<Integer, String>> parseTable = t1.getList();
+        // 存储栈中状态对应 tab 数，辅助语法树输出
+        Stack<Integer> tabCnt = new Stack<>();
         // 状态栈存储
         Stack<String> stk = new Stack<>();
         // token 中添加结束符
         lexemes.add(new Token(Tag.FINAL));
         // 文法开始符号进栈
         stk.push("P");
+        // 初始 tab 数为 0
+        tabCnt.push(0);
+        StringBuilder printTree = new StringBuilder();
         int idxLexemes = 0;
         while (!stk.empty()) {
             if (idxLexemes >= lexemes.size()) {
@@ -34,9 +39,12 @@ public class Parser {
                 return;
             }
             String top = stk.peek();
+            int curTab = tabCnt.peek();
             if (top.equals("empty")) {
                 // 匹配空串
                 stk.pop();
+                tabCnt.pop();
+                printTerm(printTree, curTab, "empty");
             } else if (term2Idx.containsKey(top)) {
                 // 栈顶为终结符
                 if (top.equals("ID")) {
@@ -55,6 +63,8 @@ public class Parser {
                     System.out.println(id);
                     ++idxLexemes;
                     stk.pop();
+                    tabCnt.pop();
+                    printTerm(printTree, curTab, id);
                 } else if (top.equals("NUM")) {
                     Num n;
                     try {
@@ -67,6 +77,8 @@ public class Parser {
                     System.out.println(n);
                     ++idxLexemes;
                     stk.pop();
+                    tabCnt.pop();
+                    printTerm(printTree, curTab, n);
                 } else if (Keywords.keywords.contains(top)) {
                     Identifier id;
                     try {
@@ -83,6 +95,8 @@ public class Parser {
                     System.out.println(id);
                     ++idxLexemes;
                     stk.pop();
+                    tabCnt.pop();
+                    printTerm(printTree, curTab, id);
                 } else if (Operators.operators.contains(top)) {
                     Operator op;
                     try {
@@ -99,6 +113,8 @@ public class Parser {
                     System.out.println(op);
                     ++idxLexemes;
                     stk.pop();
+                    tabCnt.pop();
+                    printTerm(printTree, curTab, op);
                 } else {
                     err = "Invalid terminator";
                     return;
@@ -138,9 +154,12 @@ public class Parser {
                 System.out.println(production);
                 String[] terms = production.split(" ");
                 stk.pop();
+                tabCnt.pop();
+                printTerm(printTree, curTab, terms[0]);
                 // 0: LHS, 1: ->, start from 2
                 for (int i = terms.length - 1; i >= 2; --i) {
                     stk.push(terms[i]);
+                    tabCnt.push(curTab + 1);
                 }
             } else {
                 err = "Stack top invalid";
@@ -148,8 +167,16 @@ public class Parser {
             }
         }
         if (idxLexemes < lexemes.size() && lexemes.get(idxLexemes).tag == Tag.FINAL) {
+            System.out.println("语法树输出:");
+            System.out.print(printTree);
             return;
         }
         err = "Lexemes too long";
+    }
+
+    private void printTerm(StringBuilder sb, int n, Object obj) {
+        sb.append("\t".repeat(n));
+        sb.append(obj);
+        sb.append('\n');
     }
 }
